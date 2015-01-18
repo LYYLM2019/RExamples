@@ -28,7 +28,7 @@ dfStageFinal = cbind(dfStage, dfSiteYearLong)
 # reshape
 dfStageFinalLong = reshape2::melt(dfStageFinal, id.vars = c("Day", "Site", "Year"), measure.vars = dateVars[-1],
                         variable.name = "Month")
-dfStageFinalWide = dcast(dfStageFinalLong, Day + Month + Year ~ Site, value.var = "value")
+dfStageFinalWide = reshape2::dcast(dfStageFinalLong, Day + Month + Year ~ Site, value.var = "value")
 
 # cleanup
 dfStageFinalWide[, -c(1:3)] = lapply(dfStageFinalWide[, -c(1:3)], as.numeric)
