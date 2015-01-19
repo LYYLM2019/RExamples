@@ -1,3 +1,5 @@
+library(ggplot2)
+library(reshape2)
 
 # read in the data
 dfStage = read.csv("reshapeR/Data/stage.csv", header = FALSE, stringsAsFactor = FALSE)
@@ -22,13 +24,15 @@ dfSiteYear$Site = regmatches(dfSiteYear[, 1],
            regexpr("(?<=(Stage\\s\\(mm\\)\\sat\\s))([A-Za-z\\s0-9\\.]+)", dfSiteYear[, 1], perl = TRUE))
 
 # add the site and years
-dfSiteYearLong = dfSiteYear[rep.int(1:dim(dfSiteYear)[1], 31), c("Site", "Year")]
+dfSiteYearLong = dfSiteYear[rep(1:dim(dfSiteYear)[1], each = 31), c("Site", "Year")]
 dfStageFinal = cbind(dfStage, dfSiteYearLong)
 
 # reshape
-dfStageFinalLong = reshape2::melt(dfStageFinal, id.vars = c("Day", "Site", "Year"), measure.vars = dateVars[-1],
+dfStageFinalLong = reshape2::melt(dfStageFinal, id.vars = c("Day", "Site", "Year"), 
+                                  measure.vars = dateVars[-1],
                         variable.name = "Month")
-dfStageFinalWide = reshape2::dcast(dfStageFinalLong, Day + Month + Year ~ Site, value.var = "value")
+dfStageFinalWide = reshape2::dcast(dfStageFinalLong, Day + Month + Year ~ Site, 
+                                   value.var = "value")
 
 # cleanup
 dfStageFinalWide[, -c(1:3)] = lapply(dfStageFinalWide[, -c(1:3)], as.numeric)
@@ -43,7 +47,7 @@ dfStageFinalWide = dfStageFinalWide[order(dfStageFinalWide$Date), ]
 
 # plot the values over time
 dfStageFinalLong = 
-  melt(dfStageFinalWide, id.vars = "Date", measure.vars = unique(dfSiteYear$Site),
+  reshape2::melt(dfStageFinalWide, id.vars = "Date", measure.vars = unique(dfSiteYear$Site),
        variable.name = "Site")
 ggplot(dfStageFinalLong, aes(x = Date, y = value, color = Site))+
   geom_line() + theme_bw() + facet_wrap(~ Site, scale = "free_y") 
