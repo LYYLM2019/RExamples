@@ -1,0 +1,41 @@
+If you are looking to fit a [log-logistic distribution][1] to your data, it is fairly straightforward to do so. In the example below, I am using the function `dllog` to get at the density of the log-logistic for a given set of values of the shape and scale parameter, but it is no trouble to write the PDF code yourself as well.
+
+----
+
+(Log-)Likelihood
+====
+The density of log-logistic distributed a random variable has the probability density function [PDF]
+
+    # simulate some log-logistic data
+    library(FAdist)
+    vY = rllog(n = 1000, shape = 5, scale = 6)
+    
+    # log-likelihood function
+    fnLLLL = function(vParams, vData) {
+      # uses the density function of the log-logistic function from FAdist
+      return(-sum(log(dllog(vData, shape = vParams[1], scale = vParams[2]))))
+    }
+    
+    # optimize it
+    optim(c(2, 3), fnLLLL, vData = vY)
+
+This gives:
+
+    > optim(c(2, 3), fnLLLL, vData = vY)
+    $par
+    [1] 5.132758 5.654340
+    
+    $value
+    [1] 9239.179
+    
+    $counts
+    function gradient 
+          57       NA 
+    
+    $convergence
+    [1] 0
+    
+    $message
+    NULL
+
+  [1]: http://en.wikipedia.org/wiki/Log-logistic_distribution
