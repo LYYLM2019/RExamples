@@ -1,1 +1,7 @@
-It is not always straightforward to compute value-at-risk for GARCH models, though it should be.
+It is not always straightforward to compute value-at-risk for GARCH models, though it should be. 
+
+In the example below, I will do something convenient, that is, take the  very nice examples 
+of computing VaR in-sample and out-of-sample from the Ox G@RCH toolbox, and translate them into
+R, and hopefully elucidating the logic.
+
+  
