@@ -1,10 +1,16 @@
-It is not always straightforward to compute value-at-risk for GARCH models, though it should be. 
-
-In the example below, I have taken the very nice examples 
-of computing VaR in-sample and out-of-sample from the Ox G@RCH toolbox, and translated them into
-R, and hopefully elucidating the logic.
-
-Here is plot of the underlying NASDAQ returns series from "1984-10-12" to "2000-12-21".
+#==========================================================
+# purpose: estimation of in-sample VaR using various GARCH
+#   models
+# These examples are taken from the G@RCH 6.1 manual (Section 
+#   6.1: VaR models; http://www.timberlake.co.uk/slaurent/G@RCH/default.htm)
+# The data is distributed with the console version of the G@RCH 
+#   6.1 software
+# author: TC
+# created: 11th February 2015
+# revised: 14th February 2015
+# comments:
+# TODO:
+#==========================================================
 
 library(xlsx)
 library(xts)
@@ -18,12 +24,6 @@ library(fGarch) # for standardized Student-t distribution quantiles
 dfN = read.xlsx("Data/nasdaq.xls", sheetIndex = 1)
 xN = xts(dfN$Nasdaq, order.by = dfN$Date)            
 plot(xN)
-
-I fit an ARMA(2, 0)-APARCH(1, 1) model to the data with three different distributions:
-* standard normal
-* Student's t
-* skewed Student's t
-In each case I restrict the sample to the first day of 2000 only. 
 
 #================================================
 # compute the model fit
@@ -51,9 +51,6 @@ gN3 = ugarchspec(variance.model = list(model = "apARCH",
                                    include.mean = TRUE),
                  distribution.model = "std")
 gfN3 = ugarchfit(gN3, data = xN["/2000-01-01"])
-
-Then, I write a function to get the VaR for different distributions. Note that for this
-I use the standardized quantile functions of the t- and skewed t- from the fGarch package. 
 
 #================================================
 # function to compute VaR for different distributions
@@ -96,9 +93,6 @@ getVaR = function(objGarchFit, vQ) {
   return(mVaR)
 }
 
-Next, I use the function to compute the in-sample 90% VaR, and check the computations
-by checking the number of times the series exceeds the VaR.
-
 #================================================
 # compute the in-sample VaR
 #================================================
@@ -117,4 +111,38 @@ mean(gfN1@model$modeldata$data < mVaR1[, 1])
 mean(gfN3@model$modeldata$data > mVaR3[, 2])
 mean(gfN3@model$modeldata$data < mVaR3[, 1])
 
-  
+#================================================
+# plot the in-sample VaR: skewed Student's t
+#================================================
+dfVaR2 = cbind.data.frame(date = rownames(mVaR2), 
+                 actual = gfN2@model$modeldata$data, 
+                 fitted = fitted(gfN2), mVaR2)
+dfVaR2L = melt(dfVaR2, id.var = "date")
+ggplot(dfVaR2L, aes(x = as.Date(date), y = value, color = variable)) +
+  geom_line() + theme_bw() + xlab("Date") + ylab("NASDAQ returns")
+
+
+#================================================
+# compute the rolling forecasts
+#================================================
+grN1 = ugarchroll(gN1, data = xN, 
+           n.start = min(which(index(xN) > as.Date("2000-01-01"))), 
+           refit.every = 100, 
+           calculate.VaR = TRUE, 
+           VaR.alpha = c(0.1, 0.9))
+
+# check the properties of this object
+length(grN1@forecast)
+
+# check how many have not converged
+urN1Conv = sapply(grN1@forecast, function(x) x$converge)
+
+# what does the forecast object contain
+length(grN1@forecast[[1]]$Mu)
+
+
+#================================================
+# GARCH forecasts
+#================================================
+gfN1 = ugarchfit(gN1, data = xN, out.sample = 300)
+temp = ugarchforecast(gfN1, n.ahead = 300, n.roll = 10)
