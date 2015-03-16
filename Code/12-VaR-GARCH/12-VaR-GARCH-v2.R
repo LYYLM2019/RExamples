@@ -125,24 +125,20 @@ ggplot(dfVaR2L, aes(x = as.Date(date), y = value, color = variable)) +
 #================================================
 # compute the rolling forecasts
 #================================================
-grN1 = ugarchroll(gN1, data = xN, 
-           n.start = min(which(index(xN) > as.Date("2000-01-01"))), 
-           refit.every = 100, 
-           calculate.VaR = TRUE, 
-           VaR.alpha = c(0.1, 0.9))
+gN1 = ugarchspec(variance.model = list(model = "apARCH",
+                                       garchOrder = c(1, 1)), 
+                 mean.model = list(armaOrder = c(2, 0), 
+                                   include.mean = TRUE),
+                 distribution.model = "norm")
+gfN1 = ugarchfit(gN1, data = xN["/2000-01-01"])
 
-# check the properties of this object
-length(grN1@forecast)
+gfcN1 = ugarchforecast(gfN1, n.head = 10, n.roll = 0)
 
-# check how many have not converged
-urN1Conv = sapply(grN1@forecast, function(x) x$converge)
 
-# what does the forecast object contain
-length(grN1@forecast[[1]]$Mu)
-
+temp = rugarch:::.rollfdensity(spec = gN1, data = xN, n.ahead = 10, n.start = 4050, refit.every = 1, 
+                        refit.window = "recursive")
 
 #================================================
 # GARCH forecasts
 #================================================
-gfN1 = ugarchfit(gN1, data = xN, out.sample = 300)
-temp = ugarchforecast(gfN1, n.ahead = 300, n.roll = 10)
+

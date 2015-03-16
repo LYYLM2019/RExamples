@@ -6,6 +6,7 @@ R, and hopefully elucidating the logic.
 
 Here is plot of the underlying NASDAQ returns series from "1984-10-12" to "2000-12-21".
 
+``` {r prelim, echo=TRUE, include=FALSE, message=FALSE}
 library(xlsx)
 library(xts)
 library(rugarch)
@@ -14,10 +15,15 @@ library(reshape2)
 library(ggplot2)
 library(fGarch) # for standardized Student-t distribution quantiles
 
+knitr::opts_knit$set(root.dir = "D:\\Projects\\RProjects\\Stackoverflow-R")
+```
+
+``` {r dataLoad}
 # read in the data
 dfN = read.xlsx("Data/nasdaq.xls", sheetIndex = 1)
 xN = xts(dfN$Nasdaq, order.by = dfN$Date)            
 plot(xN)
+```
 
 I fit an ARMA(2, 0)-APARCH(1, 1) model to the data with three different distributions:
 * standard normal
@@ -25,6 +31,7 @@ I fit an ARMA(2, 0)-APARCH(1, 1) model to the data with three different distribu
 * skewed Student's t
 In each case I restrict the sample to the first day of 2000 only. 
 
+``` {r modelFit}
 #================================================
 # compute the model fit
 #================================================
@@ -51,10 +58,12 @@ gN3 = ugarchspec(variance.model = list(model = "apARCH",
                                    include.mean = TRUE),
                  distribution.model = "std")
 gfN3 = ugarchfit(gN3, data = xN["/2000-01-01"])
+```
 
 Then, I write a function to get the VaR for different distributions. Note that for this
 I use the standardized quantile functions of the t- and skewed t- from the fGarch package. 
 
+``` {r computeVaR}
 #================================================
 # function to compute VaR for different distributions
 #================================================
@@ -95,10 +104,12 @@ getVaR = function(objGarchFit, vQ) {
   rownames(mVaR) = as.character(objGarchFit@model$modeldata$index)
   return(mVaR)
 }
+```
 
 Next, I use the function to compute the in-sample 90% VaR, and check the computations
 by checking the number of times the series exceeds the VaR.
 
+``` {r checkVaR, echo = TRUE, include = FALSE}
 #================================================
 # compute the in-sample VaR
 #================================================
@@ -116,5 +127,22 @@ mean(gfN1@model$modeldata$data < mVaR1[, 1])
 
 mean(gfN3@model$modeldata$data > mVaR3[, 2])
 mean(gfN3@model$modeldata$data < mVaR3[, 1])
+```
+
+Next, we can forecast the GARCH volatility using the following steps:
+1. Compute the `n.ahead` forecast given the information today. 
+2. Roll the forecast ahead by `n.roll`, and then compute `n.ahead` forecasts again.
+3. Do this, till you run out of `out.sample`.
+4. Now re-estimate the GARCH model upto the previous `out.sample`, and repeat above process. 
+
+``` {r forecastGARCH} 
+grN1 = ugarchroll(gN1, data = xN, n.ahead = 1, 
+                  n.start = 4000, refit.every = 10, 
+                  refit.window = "recursive", 
+                  calculate.VaR = TRUE, VaR.alpha = c(0.01), 
+                  keep.coef = FALSE)
+```
+
+
 
   
