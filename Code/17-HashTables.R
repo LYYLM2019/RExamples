@@ -24,7 +24,9 @@ makeHash1 = function(lenHash) {
   return(vHash)
 }
 makeHash1(10)
+
 sapply(2^(10:15), function(x) {
- hash = makeHash(x)
- c(numeric = system.time(hash)[3])
+ hash = makeHash1(x)
+ c(numeric = system.time(for(j in seq.int(x)) hash[j] == 0L)[3],
+   string = system.time(for(j in seq.int(x)) hash[names(hash)[j]] == 0L)[3])
 })
