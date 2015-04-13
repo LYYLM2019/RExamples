@@ -13,6 +13,7 @@
 
 rm(list = ls())
 library(RMySQL)
+library(DBI)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
@@ -20,8 +21,8 @@ library(tidyr)
 #================================================
 # establish a connection to the local MySQL server
 #================================================
-connLocalDB =  dbConnect(MySQL(), user = "root", password = "")                # connect to the local server
-dbListConnections(MySQL())                                                     # list the open connections
+connLocalDB =  dbConnect(MySQL(), user = "root", password = "tirthankar84")                # connect to the local server
+dbListConnections(RMySQL::MySQL())                                                     # list the open connections
 dbSendQuery(connLocalDB, "create database dbExample")                          # create a new database
 dbSendQuery(connLocalDB, "use dbExample")                                      # use the new database
 dbListTables(connLocalDB)                                                      # list the tables in the database
@@ -32,6 +33,8 @@ dbSendQuery(connLocalDB, "drop database dbExample")                            #
 #================================================
 connRemoteDB =  dbConnect(MySQL(),                                             # credentials are saved in ~/.my.cnf
                           host = "192.168.18.53",
+                          user = NULL,
+                          password = NULL,
                           dbname = "webscopedata")                             # connect to db on remote server on 192.168.18.53
 dbListTables(connRemoteDB)                                                     # get the list of tables in the database
 
@@ -80,6 +83,7 @@ connRemoteDB2 = src_mysql("webscopedata",
 tblWebBid = tbl(connRemoteDB2, "bidders")                                      # create a link to MySQL table
 
 tblBidDay = tblWebBid %>%                                                      #====================================
+  select(daynum, impressions, clicks) %>%
   group_by(daynum) %>%                                                         # group_by day number
   summarize(daily_imp = sum(impressions),
             daily_clicks = sum(clicks)) %>%                                    # aggregate impressions & clicks by day
