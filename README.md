@@ -1,4 +1,4 @@
-Stackoverflow-R
+R Examples
 ===============
 
-Collection of R Q&amp;A from SO
+Collection of miscellaneous R examples. 

@@ -1,0 +1,5 @@
+library(sp)
+library(rgdal)
+library(raster)
+nz1 = getData("GADM", country = "NZ", level = 1) 
+nz1 = spTransform(nz1, CRS = CRS("+init=epsg:2135"))
