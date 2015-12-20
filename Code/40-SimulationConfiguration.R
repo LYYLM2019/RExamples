@@ -10,13 +10,15 @@ Study1  4      3.5    0.3  0"),
 
 # write a function that takes each row of the configuration
 #   data.frame and returns the simulations
-doSim = function(simConfig) {
+doSim = function(simConfig, seed = 12345) {
+  set.seed(seed)
   dist = if(simConfig[["DIST"]] == 0) rnorm else rlnorm
+  mean = if(simConfig[["DIST"]] == 0) simConfig[["MEAN"]] else log(simConfig[["MEAN"]]) 
   return(
     data_frame(
       source = simConfig[["SOURCE"]],
       nsub = simConfig[["NSUB"]],
-      value = dist(1000, mean = simConfig[["MEAN"]], sd = simConfig[["SD"]])
+      value = dist(1000, mean = mean, sd = simConfig[["SD"]])
     )
   )
 }
